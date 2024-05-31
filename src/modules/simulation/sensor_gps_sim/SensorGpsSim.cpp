@@ -39,9 +39,8 @@
 
 using namespace matrix;
 
-SensorGpsSim::SensorGpsSim() :
-	ModuleParams(nullptr),
-	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
+SensorGpsSim::SensorGpsSim() : ModuleParams(nullptr),
+							   ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
 {
 }
 
@@ -68,8 +67,10 @@ float SensorGpsSim::generate_wgn()
 	static bool phase = true;
 	float X;
 
-	if (phase) {
-		do {
+	if (phase)
+	{
+		do
+		{
 			float U1 = (float)rand() / (float)RAND_MAX;
 			float U2 = (float)rand() / (float)RAND_MAX;
 			V1 = 2.0f * U1 - 1.0f;
@@ -78,8 +79,9 @@ float SensorGpsSim::generate_wgn()
 		} while (S >= 1.0f || fabsf(S) < 1e-8f);
 
 		X = V1 * float(sqrtf(-2.0f * float(logf(S)) / S));
-
-	} else {
+	}
+	else
+	{
 		X = V2 * float(sqrtf(-2.0f * float(logf(S)) / S));
 	}
 
@@ -89,7 +91,8 @@ float SensorGpsSim::generate_wgn()
 
 void SensorGpsSim::Run()
 {
-	if (should_exit()) {
+	if (should_exit())
+	{
 		ScheduleClear();
 		exit_and_cleanup();
 		return;
@@ -98,7 +101,8 @@ void SensorGpsSim::Run()
 	perf_begin(_loop_perf);
 
 	// Check if parameters have changed
-	if (_parameter_update_sub.updated()) {
+	if (_parameter_update_sub.updated())
+	{
 		// clear update
 		parameter_update_s param_update;
 		_parameter_update_sub.copy(&param_update);
@@ -106,7 +110,8 @@ void SensorGpsSim::Run()
 		updateParams();
 	}
 
-	if (_vehicle_local_position_sub.updated() && _vehicle_global_position_sub.updated()) {
+	if (_vehicle_local_position_sub.updated() && _vehicle_global_position_sub.updated())
+	{
 
 		vehicle_local_position_s lpos{};
 		_vehicle_local_position_sub.copy(&lpos);
@@ -114,11 +119,17 @@ void SensorGpsSim::Run()
 		vehicle_global_position_s gpos{};
 		_vehicle_global_position_sub.copy(&gpos);
 
-		double latitude = gpos.lat + math::degrees((double)generate_wgn() * 0.2 / CONSTANTS_RADIUS_OF_EARTH);
-		double longitude = gpos.lon + math::degrees((double)generate_wgn() * 0.2 / CONSTANTS_RADIUS_OF_EARTH);
-		double altitude = (double)(gpos.alt + (generate_wgn() * 0.5f));
+		// double latitude = gpos.lat + math::degrees((double)generate_wgn() * 0.2 / CONSTANTS_RADIUS_OF_EARTH);
+		// double longitude = gpos.lon + math::degrees((double)generate_wgn() * 0.2 / CONSTANTS_RADIUS_OF_EARTH);
+		// double altitude = (double)(gpos.alt + (generate_wgn() * 0.5f));
 
-		Vector3f gps_vel = Vector3f{lpos.vx, lpos.vy, lpos.vz} + noiseGauss3f(0.06f, 0.077f, 0.158f);
+		// Vector3f gps_vel = Vector3f{lpos.vx, lpos.vy, lpos.vz} + noiseGauss3f(0.06f, 0.077f, 0.158f);
+
+		double latitude = gpos.lat;
+		double longitude = gpos.lon;
+		double altitude = (double)(gpos.alt);
+
+		Vector3f gps_vel = Vector3f{lpos.vx, lpos.vy, lpos.vz};
 
 		// device id
 		device::Device::DeviceId device_id;
@@ -129,7 +140,8 @@ void SensorGpsSim::Run()
 
 		sensor_gps_s sensor_gps{};
 
-		if (_sim_gps_used.get() >= 4) {
+		if (_sim_gps_used.get() >= 4)
+		{
 			// fix
 			sensor_gps.fix_type = 3; // 3D fix
 			sensor_gps.s_variance_m_s = 0.4f;
@@ -138,8 +150,9 @@ void SensorGpsSim::Run()
 			sensor_gps.epv = 1.78f;
 			sensor_gps.hdop = 0.7f;
 			sensor_gps.vdop = 1.1f;
-
-		} else {
+		}
+		else
+		{
 			// no fix
 			sensor_gps.fix_type = 0; // No fix
 			sensor_gps.s_variance_m_s = 100.f;
@@ -153,7 +166,7 @@ void SensorGpsSim::Run()
 		sensor_gps.timestamp_sample = gpos.timestamp_sample;
 		sensor_gps.time_utc_usec = 0;
 		sensor_gps.device_id = device_id.devid;
-		sensor_gps.latitude_deg = latitude; // Latitude in degrees
+		sensor_gps.latitude_deg = latitude;	  // Latitude in degrees
 		sensor_gps.longitude_deg = longitude; // Longitude in degrees
 		sensor_gps.altitude_msl_m = altitude; // Altitude in meters above MSL
 		sensor_gps.altitude_ellipsoid_m = altitude;
@@ -164,7 +177,7 @@ void SensorGpsSim::Run()
 		sensor_gps.vel_e_m_s = gps_vel(1);
 		sensor_gps.vel_d_m_s = gps_vel(2);
 		sensor_gps.cog_rad = atan2(gps_vel(1),
-					   gps_vel(0)); // Course over ground (NOT heading, but direction of movement), -PI..PI, (radians)
+								   gps_vel(0)); // Course over ground (NOT heading, but direction of movement), -PI..PI, (radians)
 		sensor_gps.timestamp_time_relative = 0;
 		sensor_gps.heading = NAN;
 		sensor_gps.heading_offset = NAN;
@@ -186,15 +199,18 @@ int SensorGpsSim::task_spawn(int argc, char *argv[])
 {
 	SensorGpsSim *instance = new SensorGpsSim();
 
-	if (instance) {
+	if (instance)
+	{
 		_object.store(instance);
 		_task_id = task_id_is_work_queue;
 
-		if (instance->init()) {
+		if (instance->init())
+		{
 			return PX4_OK;
 		}
-
-	} else {
+	}
+	else
+	{
 		PX4_ERR("alloc failed");
 	}
 
@@ -212,7 +228,8 @@ int SensorGpsSim::custom_command(int argc, char *argv[])
 
 int SensorGpsSim::print_usage(const char *reason)
 {
-	if (reason) {
+	if (reason)
+	{
 		PX4_WARN("%s\n", reason);
 	}
 

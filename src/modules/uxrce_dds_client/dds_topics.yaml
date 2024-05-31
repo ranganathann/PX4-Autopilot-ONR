@@ -47,6 +47,9 @@ publications:
   - topic: /fmu/out/vehicle_attitude
     type: px4_msgs::msg::VehicleAttitude
 
+  - topic: /fmu/out/vehicle_attitude_groundtruth
+    type: px4_msgs::msg::VehicleAttitude
+    
   - topic: /fmu/out/vehicle_control_mode
     type: px4_msgs::msg::VehicleControlMode
 
@@ -60,6 +63,9 @@ publications:
     type: px4_msgs::msg::SensorGps
 
   - topic: /fmu/out/vehicle_local_position
+    type: px4_msgs::msg::VehicleLocalPosition
+  
+  - topic: /fmu/out/vehicle_local_position_groundtruth
     type: px4_msgs::msg::VehicleLocalPosition
 
   - topic: /fmu/out/vehicle_odometry
